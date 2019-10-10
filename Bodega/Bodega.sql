@@ -1,30 +1,3 @@
-CREATE TABLE Sucursal(
-    IdSucursal SERIAL PRIMARY KEY,
-    Codigo TEXT NOT NULL,
-    Nombre TEXT NOT NULL,
-    Descripcion TEXT NOT NULL,
-    Estado BOOLEAN NOT NULL,
-    IdDireccion INT NOT NULL REFERENCES Direccion(IdDireccion)
-);
-
-CREATE TABLE Articulo(
-    IdArticulo SERIAL PRIMARY KEY,
-    Codigo TEXT NOT NULL,
-    Nombre TEXT NOT NULL,
-    Descripcion TEXT NOT NULL,
-    Precio INT NOT NULL,
-    Estado TEXT NOT NULL,
-    IdCategoria INT NOT NULL REFERENCES Categoria(IdCategoria),
-    Garantia DATE NOT NULL,
-    FechaRegistro DATE NOT NULL,
-    PuntosCompra INT NOT NULL
-);
-
-CREATE TABLE Categoria(
-    IdCategoria SERIAL PRIMARY KEY,
-    Nombre TEXT NOT NULL
-);
-
 CREATE TABLE Pais(
     IdPais SERIAL PRIMARY KEY,
     Nombre TEXT NOT NULL
@@ -52,6 +25,32 @@ CREATE TABLE Direccion(
     IdDireccion SERIAL PRIMARY KEY,
     IdDistrito INT NOT NULL REFERENCES Distrito(IdDistrito),
     Direccion TEXT
+);
+
+CREATE TABLE Sucursal(
+    IdSucursal SERIAL PRIMARY KEY,
+    Codigo TEXT NOT NULL,
+    Nombre TEXT NOT NULL,
+    Descripcion TEXT NOT NULL,
+    Estado BOOLEAN NOT NULL,
+    IdDireccion INT NOT NULL REFERENCES Direccion(IdDireccion)
+);
+
+CREATE TABLE Categoria(
+    IdCategoria SERIAL PRIMARY KEY,
+    Nombre TEXT NOT NULL
+);
+
+CREATE TABLE Articulo(
+    IdArticulo SERIAL PRIMARY KEY,
+    Codigo TEXT NOT NULL,
+    Nombre TEXT NOT NULL,
+    Descripcion TEXT NOT NULL,
+    Precio INT NOT NULL,
+    IdCategoria INT NOT NULL REFERENCES Categoria(IdCategoria),
+    Garantia INT NOT NULL,
+    FechaRegistro DATE NOT NULL,
+    PuntosCompra INT NOT NULL
 );
 
 CREATE TABLE Puesto(
@@ -109,9 +108,16 @@ CREATE TABLE Entrega(
     HoraLlegada TIME NOT NULL
 );
 
-CREATE TABLE EntregaArticulo(
+CREATE TABLE Producto(
+    IdProducto SERIAL PRIMARY KEY,
+    IdArticulo INT NOT NULL REFERENCES Articulo(IdArticulo),
+    IdSucursal INT NOT NULL REFERENCES Sucursal(IdSucursal),
+    Estado TEXT
+);
+
+CREATE TABLE EntregaProducto(
     IdEntrega INT NOT NULL REFERENCES Entrega(IdEntrega),
-    IdArticulo INT NOT NULL REFERENCES Articulo(IdArticulo)
+    IdProducto INT NOT NULL REFERENCES Producto(IdProducto)
 );
 
 CREATE TABLE MetodoPago(
@@ -136,9 +142,9 @@ CREATE TABLE Factura(
     FechaHora TIMESTAMP NOT NULL
 );
 
-CREATE TABLE ArticuloFactura(
+CREATE TABLE ProductoFactura(
     IdFactura INT NOT NULL REFERENCES Factura(IdFactura),
-    IdArticulo INT NOT NULL REFERENCES Articulo(IdArticulo),
+    IdProducto INT NOT NULL REFERENCES Producto(IdProducto),
     IdMetodoPago INT NOT NULL REFERENCES MetodoPago(IdMetodoPago),
     Precio INT NOT NULL
 );
