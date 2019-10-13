@@ -265,4 +265,153 @@ RETURNS TABLE(
     $$
 LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION compra(
+    _IdCliente INT,
+    _IdEmpleado INT,
+    _IdSucursal INT,
+    _FechaHora TIMESTAMP,
+    _IdProductos INT[],
+    _IdMetodosPago INT[],
+    _Precios INT[]
+)
+RETURNS VOID AS $$
+    DECLARE new_IdFactura INTEGER;
+            i INTEGER = 0;
+            saldoPuntos INTEGER = 0;
+            puntosProducto INTEGER = 0;
+    BEGIN
+        SELECT Puntos into saldoPuntos FROM Cliente Cl
+        WHERE Cl.IdCliente = _IdCliente;
 
+        INSERT INTO Factura(IdEmpleado, IdCliente, IdSucursal, FechaHora) VALUES
+        (_IdEmpleado, _IdCliente, _IdSucursal, _FechaHora)
+        RETURNING IdFactura INTO new_IdFactura;
+
+        FOREACH i IN ARRAY _IdProductos
+        LOOP
+            INSERT INTO productofactura(IdFactura, IdProducto, IdMetodoPago, Precio)
+            VALUES (new_IdFactura, i, _IdMetodosPago[i], _Precios);
+
+            SELECT A.PuntosCompra INTO puntosProducto FROM Articulo A
+            INNER JOIN Producto P ON A.idarticulo = P.idarticulo
+            WHERE P.idproducto = i;
+
+            IF _IdMetodosPago[i] = 0 THEN
+                saldoPuntos = saldoPuntos + puntosProducto;
+            ELSE
+                saldoPuntos = saldoPuntos - puntosProducto;
+            END IF;
+
+        END LOOP;
+
+        UPDATE cliente
+        SET Puntos = saldoPuntos
+        WHERE IdCliente = _IdCliente;
+    END;
+    $$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION generarCSVPuntos()
+RETURNS VOID AS $$
+    BEGIN
+        COPY Cliente(IdCliente, Puntos) TO '\tmp\persons_db.csv' DELIMITER ',' CSV HEADER;
+    END;
+    $$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION generarCSVProductos()
+RETURNS VOID AS $$
+    BEGIN
+        COPY Producto(IdProducto, IdSucursal, IdArticulo, Estado)
+        TO 'C:\Users\Jose Andres Ch\Documents\TEC\2019-2\Bases de Datos\Sk8-4-TEC\Bodega\reporte_productos.csv' DELIMITER ',' CSV HEADER;
+    END;
+    $$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION pedirProductos(
+    _IdArticulo INTEGER,
+    _Cantidad INTEGER
+)
+RETURNS VOID AS $$
+    BEGIN
+        WHILE _Cantidad > 0 LOOP
+            INSERT INTO ProductoEnAlmacen(IdArticulo, Estado) VALUES (_IdArticulo, TRUE);
+            _Cantidad = _Cantidad - 1;
+            END LOOP;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION enviarProductos(
+    _IdArticulo INTEGER,
+    _IdSucursal INTEGER,
+    _Cantidad INTEGER,
+    _IdCamion INTEGER
+)
+RETURNS VOID AS $$
+    DECLARE new_IdEntrega INT = 0;
+            estadoProducto BOOLEAN = TRUE;
+            new_IdProducto INT = 0;
+    BEGIN
+        INSERT INTO Entrega(idcamion, idsucursal, fecha, horasalida, horallegada) VALUES
+        (_IdCamion,_IdSucursal, current_date, current_time, current_time + '2:00:00')
+        RETURNING IdEntrega into new_IdEntrega;
+        WHILE _Cantidad > 0 LOOP
+            SELECT estado Into estadoProducto FROM productoenalmacen
+            WHERE idarticulo = _IdArticulo AND estado = TRUE
+            LIMIT 1;
+
+            IF estadoProducto = NULL THEN
+                SELECT pedirProductos(_IdArticulo, _Cantidad);
+            ELSE
+                INSERT INTO producto(idarticulo, idsucursal, estado) VALUES
+                (_IdArticulo, _IdSucursal, 'En Stock')
+                RETURNING idproducto INTO new_IdProducto;
+
+                INSERT INTO EntregaProducto(identrega, idproducto) VALUES
+                (new_IdEntrega, new_IdProducto);
+
+                _Cantidad = _Cantidad - 1;
+            END IF;
+
+        END LOOP;
+
+    END;
+$$
+LANGUAGE plpgsql;
+
+SELECT * FROM consultarEmpleado(7);
+
+SELECT * FROM consultarSucursal(2);
+
+select crearEmpleado('3318381','Jose','Chavarria',TRUE, 3, '10-10-2010', 1);
+
+select crearPromocion(1,1,'2019-10-19 10:23:54', '2019-10-25 10:23:54', 10000, 50);
+
+select crearSucursal('uuuu','ky','f',TRUE,1);
+
+select eliminarEmpleado(15);
+
+select eliminarSucursal(4);
+
+SELECT * FROM empleadoDelMes(10,2004);
+
+select estadoProducto('Regalado', 6);
+
+SELECT modificarEmpleado(14, '207870287', 'Jose','Chavarria', TRUE, 3, '10-10-2010',1);
+
+select modificarSucursal(1,'KY', 'La Calle', 'guaro pls', TRUE, 1);
+
+select registrarArticulo('T', 'Pantalon','De mezclilla',50000,1,90,'2019-10-12',50, '{1,3}');
+
+SELECT * from consultarestado(6);
+
+SELECT * FROM consultarpromocion('2019-10-20 15:36:38');
+
+select generarCSVPuntos();
+
+select generarCSVProductos();
+
+select pedirProductos(2,100);
+
+select enviarProductos(1,3,70);

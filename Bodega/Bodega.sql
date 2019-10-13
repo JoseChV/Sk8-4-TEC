@@ -149,3 +149,8 @@ CREATE TABLE ProductoFactura(
     IdMetodoPago INT NOT NULL REFERENCES MetodoPago(IdMetodoPago),
     Precio INT NOT NULL
 );
+
+CREATE TABLE ProductoEnAlmacen(
+    IdArticulo INT NOT NULL REFERENCES Articulo(IdArticulo),
+    Estado BOOLEAN NOT NULL
+);
