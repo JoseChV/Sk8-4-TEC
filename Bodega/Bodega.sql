@@ -63,6 +63,7 @@ CREATE TABLE Empleado(
     IdEmpleado SERIAL PRIMARY KEY,
     Cedula TEXT NOT NULL,
     Nombre TEXT NOT NULL,
+    Apellidos TEXT NOT NULL,
     Estado BOOLEAN NOT NULL,
     IdSucursal INT NOT NULL REFERENCES Sucursal(IdSucursal),
     FechaIngreso DATE NOT NULL,
