@@ -1,3 +1,5 @@
+package DB;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -8,26 +10,39 @@ import java.sql.SQLException;
 public class Main {
 
     public static void main(String[] args) throws SQLException {
-
+    	cierreDeCaja(2);
     }
 
     public static void cierreDeCaja(int idSucursal) throws SQLException{
         conectarSucursal(idSucursal);
 
-        String consultaSelect = "SELECT * FROM Producto WHERE Estado = 'En Stock'";
+        String consultaSelect = "SELECT * FROM Articulo";
+
         ResultSet rs = Conexion.Select(consultaSelect);
 
         String select = "";
         int idArticulo;
-        String estado;
+        
+        ResultSet rs2 = null;
+        
+        int cantidad;
+
         while(rs.next()) {
-            idArticulo = rs.getInt(2);
-            estado = rs.getString(4);
+            idArticulo = rs.getInt(1);
+            
             select = "SELECT ContarProductos("
             + idArticulo + ")";
             System.out.println(select);
-            Conexion.Select(select);
-
+            
+            
+            if(cantidad < 5) {
+            	conectarBodega();
+            	String pedirProductos = "SELECT enviarProductos(" + idArticulo + "," + idSucursal + "," + 20 + "," + 1 + ")";
+            	Conexion.Select(pedirProductos);
+            	conectarSucursal(idSucursal);
+            }
+            
+            
         }
 
     }

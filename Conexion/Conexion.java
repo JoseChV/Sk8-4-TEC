@@ -1,3 +1,5 @@
+package DB;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -14,8 +16,8 @@ public class Conexion {
     private static Connection conexion;
     private static Statement sentencia;
     private static ResultSet rs;
-    static boolean conectado;
-
+	static boolean conectado;
+	
 
     public static void Conectar(String user, String pass, String nameDB, String port, String managerDB) {
         switch (managerDB.toLowerCase()) {
@@ -92,5 +94,3 @@ public class Conexion {
     }
 
 }
-
-//Link de referencia = https://www.youtube.com/watch?v=Vnay39yTo0A&feature=youtu.be
