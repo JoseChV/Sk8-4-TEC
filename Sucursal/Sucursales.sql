@@ -1,6 +1,10 @@
-CREATE DATABASE IF NOT EXISTS Base_Sucursal;
+CREATE DATABASE IF NOT EXISTS Base_Sucursal1;
+CREATE DATABASE IF NOT EXISTS Base_Sucursal2;
+CREATE DATABASE IF NOT EXISTS Base_Sucursal3;
 
-USE Base_Sucursal;
+USE Base_Sucursal1;
+USE Base_Sucursal2;
+USE Base_Sucursal3;
 
 CREATE TABLE Categoria(
     IdCategoria INT AUTO_INCREMENT PRIMARY KEY,
@@ -91,8 +95,8 @@ CREATE TABLE Direccion(
 CREATE TABLE Entrega(
     IdEntrega INT AUTO_INCREMENT PRIMARY KEY,
     Fecha DATE NOT NULL,
-    HoraSalida DATE NOT NULL,
-    HoraLlegada DATE NOT NULL
+    HoraSalida TIME NOT NULL,
+    HoraLlegada TIME NOT NULL
 );
 
 
@@ -146,8 +150,9 @@ INSERT INTO Puesto(Nombre, Salario)
 VALUES 
 ("Administrador", 900000),
 ("Gerente", 1000000),
-("Cajero", 600000),
+("Vendedor", 600000),
 ("Conserje", 400000);
+
 
 INSERT INTO MetodoPago(Nombre)
 VALUES 

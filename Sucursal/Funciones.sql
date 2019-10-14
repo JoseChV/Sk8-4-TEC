@@ -1,4 +1,6 @@
-USE Base_Sucursal;
+USE Base_Sucursal1;
+USE Base_Sucursal2;
+USE Base_Sucursal3;
 
 DELIMITER //
 CREATE FUNCTION ContarProductos(_IdArticulo INT)
@@ -58,10 +60,14 @@ CREATE PROCEDURE RegistroArticulo(
     _IdCategoria INT,
     _Garantia VARCHAR(40),
     _FechaRegistro DATE,
-    _CantidadProductos INT
+    _CantidadProductos INT,
+    _HoraSalida TIME,
+    _HoraLlegada TIME
 )
 BEGIN
 	DECLARE _IdArticulo INT DEFAULT 0;
+    DECLARE _IdEntrega INT DEFAULT 0;
+    DECLARE _IdProducto INT DEFAULT 0;
     DECLARE _Estado VARCHAR(50);
     DECLARE i INT;
     SET i = 0;
@@ -69,8 +75,12 @@ BEGIN
 	INSERT INTO Articulo(Codigo, Nombre, Descripcion, Precio, IdCategoria, Garantia, FechaRegistro, PuntosCompra)
 	VALUES 
 	(_Codigo, _Nombre, _Descripcion, _Precio, _IdCategoria, _Garantia, _FechaRegistro, _Precio / 100);
-    
     SET _IdArticulo = LAST_INSERT_ID();
+    
+    INSERT INTO Entrega(Fecha, HoraSalida, HoraLlegada)
+	VALUES
+	(_FechaRegistro, _HoraSalida, _HoraLlegada);
+    SET _IdEntrega = LAST_INSERT_ID();
     
     IF _Garantia = "Si" THEN
 		SET _Estado = "Con Garantia";
@@ -83,9 +93,17 @@ BEGIN
 		INSERT INTO Producto(IdArticulo, Estado)
         VALUES
         (_IdArticulo, _Estado);
+        SET _IdProducto = LAST_INSERT_ID();
+        
+        INSERT INTO EntregaArticulo(IdEntrega, IdProducto)
+        VALUES
+        (_IdEntrega, _IdProducto);
+        
         SET i = i + 1;
         
 	END WHILE InsertarProductos;
+    
+    
 END // 
 DELIMITER ;
 
@@ -178,12 +196,12 @@ CREATE PROCEDURE EmpleadoMes(
 	_Fecha DATE
 )
 BEGIN
-	SELECT COUNT(F.IdFactura) AS EmpleadoDelMes, E.IdEmpleado, E.Nombre, E.Apellido
+	SELECT COUNT(F.IdFactura) AS CantidadVentas, E.IdEmpleado, E.Nombre, E.Apellido
     FROM Factura F
     INNER JOIN Empleado E ON E.IdEmpleado = F.IdEmpleado
-    WHERE EXTRACT(YEAR FROM F.Fecha) = EXTRACT(YEAR FROM _Fecha) AND EXTRACT(MONTH FROM F.Fecha) = EXTRACT(MONTH FROM _Fecha)
+    WHERE EXTRACT(YEAR FROM F.Fecha) = EXTRACT(YEAR FROM _Fecha) AND EXTRACT(MONTH FROM F.Fecha) = EXTRACT(MONTH FROM _Fecha) AND E.IdPuesto = 3
     GROUP BY E.IdEmpleado
-    ORDER BY EmpleadoDelMes DESC
+    ORDER BY CantidadVentas DESC
     LIMIT 1;
 END //
 DELIMITER ;
@@ -358,19 +376,58 @@ BEGIN
 END //
 DELIMITER ;
 
+DELIMITER // 
+CREATE PROCEDURE InsertarUbicacion(
+	_Pais VARCHAR(60),
+    _Provincia VARCHAR(60),
+    _Canton VARCHAR(60),
+    _Distrito VARCHAR(60),
+    _Direccion VARCHAR(120)
+)
+BEGIN
+	DECLARE LastIDInput INT DEFAULT 0;
 
-CALL RegistroArticulo("1233124", "Royal", "Camiseta con el logo de Royal centrado", 15000, 1, "Si", "2019-08-11", 200);
-CALL RegistroArticulo("1233124", "SK", "Camiseta con el logo de SK centrado", 10000, 1, "Si", "2019-09-22", 100);
-CALL RegistroArticulo("1233124", "Royal", "Pantalon con el logo de Royal centrado", 20000, 2, "Si", "2019-08-11", 3);
+	INSERT INTO Pais(Nombre)
+	VALUES 
+    (_Pais);
+    SET LastIDInput = LAST_INSERT_ID();
+    
+	INSERT INTO Provincia(IdPais, Nombre)
+	VALUES 
+    (LastIDInput, _Provincia);
+    SET LastIDInput = LAST_INSERT_ID();
+    
+    INSERT INTO Canton(IdProvincia, Nombre)
+	VALUES 
+    (LastIDInput, _Canton);
+    SET LastIDInput = LAST_INSERT_ID();
+    
+    INSERT INTO Distrito(IdCanton, Nombre)
+	VALUES 
+    (LastIDInput, _Distrito);
+    SET LastIDInput = LAST_INSERT_ID();
+    
+	INSERT INTO Direccion(IdDistrito, Direccion)
+	VALUES 
+    (LastIDInput, _Direccion);
+    SET LastIDInput = LAST_INSERT_ID();
+    
+END //
+DELIMITER ;
+
+
+CALL RegistroArticulo("1233124", "Royal", "Camiseta con el logo de Royal centrado", 15000, 1, "Si", "2019-08-11", 200, "07:00:00","15:00:00");
+CALL RegistroArticulo("1233124", "SK", "Camiseta con el logo de SK centrado", 10000, 1, "Si", "2019-09-22", 100, "07:00:00", "12:00:00");
+CALL RegistroArticulo("1233124", "Royal", "Pantalon con el logo de Royal centrado", 20000, 2, "Si", "2019-08-11", 3, "07:00:00", "18:00:00");
  
 CALL EgresoArticulo(195, "Vendido");
 CALL EgresoArticulo(195, "En Stock");
 
-CALL InsertarEmpleado("804450323", "Joseju", "FernandezJu", "2018-09-09", 1);
+CALL InsertarEmpleado("804450323", "Joseju", "FernandezJu", "2018-09-09", 3);
 CALL InsertarEmpleado("701430353", "Alberto","Fernandez","2019-09-09", 3);
 CALL InsertarEmpleado("804256323", "Ramiro","Ramirez","2019-11-07", 3);
 CALL InsertarEmpleado("104254243", "Jonathan","Joestar","2019-04-23", 4);
-CALL InsertarEmpleado("192302803", "Jotaro","Kujo","2019-08-26", 4);
+CALL InsertarEmpleado("192302803", "Jotaro","Kujo","2019-08-26", 1);
 CALL InsertarEmpleado("731283218", "Giorno","Giovana","2019-11-30", 3);
 CALL InsertarEmpleado("403218338", "Josue","Hernandez","2019-02-28", 4);
 CALL InsertarEmpleado("532817098", "Angelo","Segura","2019-06-14", 4);
@@ -378,7 +435,7 @@ CALL InsertarEmpleado("323172338", "Maria","Blanco","2019-08-17", 3);
 
 CALL ModificarEmpleado(1,"690938098", "Jose", "Fernandez", "2019-09-09", 2);
 
-CALL EliminarEmpleado(2);
+CALL EliminarEmpleado(9);
 
 CALL ConsultarEmpleado(1);
 
@@ -411,3 +468,5 @@ CALL GenerarCSVPuntos();
 CALL GenerarCSVProductos();
 
 CALL GenerarCSVCompras();
+
+CALL InsertarUbicacion("Costa Rica", "Cartago", "Cartago", "Occidental", "Calle 2 Avenida 3");
