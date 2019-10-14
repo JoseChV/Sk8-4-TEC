@@ -7,7 +7,6 @@ CREATE OR REPLACE FUNCTION registrarArticulo(
     _IdCategoria INT,
     _Garantia INT,
     _FechaRegistro DATE,
-    _PuntosCompra INT,
     _Sucursales INT[]
 )
 RETURNS VOID AS $$
@@ -15,7 +14,7 @@ RETURNS VOID AS $$
             i integer = 0;
     BEGIN
         INSERT INTO Articulo(codigo, nombre, descripcion, precio, idcategoria, garantia, fecharegistro, puntoscompra)
-        VALUES (_Codigo, _Nombre, _Descripcion, _Precio, _IdCategoria, _Garantia, _FechaRegistro, _PuntosCompra)
+        VALUES (_Codigo, _Nombre, _Descripcion, _Precio, _IdCategoria, _Garantia, _FechaRegistro, _Precio/100)
         RETURNING IdArticulo INTO new_id;
         FOREACH i IN ARRAY _Sucursales
         LOOP
@@ -296,10 +295,10 @@ RETURNS VOID AS $$
             INNER JOIN Producto P ON A.idarticulo = P.idarticulo
             WHERE P.idproducto = i;
 
-            IF _IdMetodosPago[i] = 0 THEN
-                saldoPuntos = saldoPuntos + puntosProducto;
+            IF _IdMetodosPago[i] = 5 THEN
+                saldoPuntos = saldoPuntos - puntosProducto * 10;
             ELSE
-                saldoPuntos = saldoPuntos - puntosProducto;
+                saldoPuntos = saldoPuntos + puntosProducto;
             END IF;
 
         END LOOP;
@@ -335,7 +334,8 @@ CREATE OR REPLACE FUNCTION pedirProductos(
 RETURNS VOID AS $$
     BEGIN
         WHILE _Cantidad > 0 LOOP
-            INSERT INTO ProductoEnAlmacen(IdArticulo, Estado) VALUES (_IdArticulo, TRUE);
+            INSERT INTO ProductoEnAlmacen(IdArticulo, Estado) VALUES
+            (_IdArticulo, TRUE);
             _Cantidad = _Cantidad - 1;
             END LOOP;
     END;
@@ -354,18 +354,24 @@ RETURNS VOID AS $$
             new_IdProducto INT = 0;
     BEGIN
         INSERT INTO Entrega(idcamion, idsucursal, fecha, horasalida, horallegada) VALUES
-        (_IdCamion,_IdSucursal, current_date, current_time, current_time + '2:00:00')
+        (_IdCamion,_IdSucursal, current_date, current_time, current_time + INTERVAL '2 hours')
         RETURNING IdEntrega into new_IdEntrega;
         WHILE _Cantidad > 0 LOOP
-            SELECT estado Into estadoProducto FROM productoenalmacen
-            WHERE idarticulo = _IdArticulo AND estado = TRUE
+
+            SELECT Estado INTO estadoProducto FROM productoenalmacen
+            WHERE IdArticulo = _IdArticulo AND Estado = TRUE
             LIMIT 1;
 
-            IF estadoProducto = NULL THEN
-                SELECT pedirProductos(_IdArticulo, _Cantidad);
+            IF estadoProducto ISNULL THEN
+                PERFORM pedirProductos(_IdArticulo, _Cantidad);
             ELSE
+
+                UPDATE ProductoEnAlmacen
+                SET Estado = FALSE
+                WHERE _IdArticulo = _IdArticulo AND Estado = TRUE;
+
                 INSERT INTO producto(idarticulo, idsucursal, estado) VALUES
-                (_IdArticulo, _IdSucursal, 'En Stock')
+                (_IdArticulo, _IdSucursal, 'En envio')
                 RETURNING idproducto INTO new_IdProducto;
 
                 INSERT INTO EntregaProducto(identrega, idproducto) VALUES
@@ -379,6 +385,19 @@ RETURNS VOID AS $$
     END;
 $$
 LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION envioListo(
+    _IdSucursal INTEGER
+)
+    RETURNS VOID AS $$
+    BEGIN
+        UPDATE Producto
+        SET Estado = 'En stock'
+        WHERE Estado = 'En envio' AND IdSucursal = _IdSucursal;
+    END;
+$$
+LANGUAGE plpgsql;
+
 
 SELECT * FROM consultarEmpleado(7);
 
@@ -402,7 +421,7 @@ SELECT modificarEmpleado(14, '207870287', 'Jose','Chavarria', TRUE, 3, '10-10-20
 
 select modificarSucursal(1,'KY', 'La Calle', 'guaro pls', TRUE, 1);
 
-select registrarArticulo('T', 'Pantalon','De mezclilla',50000,1,90,'2019-10-12',50, '{1,3}');
+select registrarArticulo('T', 'Pantalon','De mezclilla',50000,1,90,'2019-10-12', '{1,3}');
 
 SELECT * from consultarestado(6);
 
@@ -414,4 +433,4 @@ select generarCSVProductos();
 
 select pedirProductos(2,100);
 
-select enviarProductos(1,3,70);
+select enviarProductos(2,1,3,1);
