@@ -95,7 +95,7 @@ CREATE TABLE Entrega(
     HoraLlegada DATE NOT NULL
 );
 
--- falta hablar sobre este
+
 CREATE TABLE EntregaArticulo(
     IdEntrega INT NOT NULL,
     IdProducto INT NOT NULL,
@@ -137,10 +137,10 @@ CREATE TABLE ArticuloFactura(
     FOREIGN KEY(IdMetodoPago) REFERENCES MetodoPago(IdMetodoPago)
 );
 
-
 INSERT INTO Categoria(Nombre)
 VALUES 
-("Camiseta");
+("Camiseta"),
+("Pantalon");
     
 INSERT INTO Puesto(Nombre, Salario)
 VALUES 

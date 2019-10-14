@@ -1,6 +1,21 @@
 USE Base_Sucursal;
 
 DELIMITER //
+CREATE FUNCTION ContarProductos(_IdArticulo INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+	DECLARE TotalProductos INT DEFAULT 0;
+    
+    SELECT COUNT(P.IdProducto) INTO TotalProductos
+    FROM Producto P
+    WHERE P.IdArticulo = _IdArticulo AND (P.Estado = "En Stock" OR P.Estado = "Con Garantia");
+    
+    RETURN TotalProductos;
+END //
+DELIMITER ;
+
+DELIMITER //
 CREATE FUNCTION CantidadPts(_IdProducto INT, _IdMetodoPago INT)
 RETURNS INT
 DETERMINISTIC
@@ -282,15 +297,71 @@ CREATE PROCEDURE GenerarCSVPuntos()
 BEGIN 
 	SELECT IdCliente, Nombre, Apellido, Cedula, Puntos
 	FROM Cliente
-	INTO OUTFILE 'C:/Users/PT/Documents/TEC/Semestre 6/Bases/Proyecto 1 MySQL/Sucursal/PuntosCSV.csv'
+	INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 5.7/Uploads/PuntosCSV.csv'
 	FIELDS TERMINATED BY ','
 	ENCLOSED BY '"'
 	LINES TERMINATED BY '\n';
 END //
 DELIMITER ;
 
+DELIMITER //
+CREATE PROCEDURE GenerarCSVProductos()
+BEGIN 
+	SELECT COUNT(P.IdProducto) AS Productos, C.Nombre, A.Nombre, A.Precio, A.PuntosCompra, P.Estado
+	FROM Producto P
+    INNER JOIN Articulo A ON A.IdArticulo = P.IdArticulo
+    INNER JOIN Categoria C ON C.IdCategoria = A.IdCategoria
+    GROUP BY A.Nombre, P.Estado, C.Nombre
+    ORDER BY Productos DESC
+	INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 5.7/Uploads/ProductosCSV.csv'
+	FIELDS TERMINATED BY ','
+	ENCLOSED BY '"'
+	LINES TERMINATED BY '\n';
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE GenerarCSVCompras()
+BEGIN 
+	SELECT COUNT(P.IdProducto) AS Compras, C.Nombre, A.Nombre, A.Precio
+	FROM Producto P
+    INNER JOIN Articulo A ON A.IdArticulo = P.IdArticulo
+    INNER JOIN Categoria C ON C.IdCategoria = A.IdCategoria
+    WHERE P.Estado = "Vendido"
+    GROUP BY A.Nombre, C.Nombre
+    ORDER BY Compras DESC
+	INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 5.7/Uploads/ComprasCSV.csv'
+	FIELDS TERMINATED BY ','
+	ENCLOSED BY '"'
+	LINES TERMINATED BY '\n';
+END //
+DELIMITER ;
+
+DELIMITER // 
+CREATE PROCEDURE CierreCaja()
+BEGIN
+	DECLARE _CantidadArticulos INT DEFAULT 0;
+	DECLARE i INT;
+    SET i = 1;
+    
+    SELECT COUNT(A.IdArticulo) INTO _CantidadArticulos
+    FROM Articulo A;
+    
+	ContarProductos: WHILE i < (_CantidadArticulos + 1) DO
+    
+    	IF ContarProductos(i) < 5 THEN
+			SET i = i + 1;
+		END IF;
+        
+	END WHILE ContarProductos;
+   
+END //
+DELIMITER ;
+
+
 CALL RegistroArticulo("1233124", "Royal", "Camiseta con el logo de Royal centrado", 15000, 1, "Si", "2019-08-11", 200);
 CALL RegistroArticulo("1233124", "SK", "Camiseta con el logo de SK centrado", 10000, 1, "Si", "2019-09-22", 100);
+CALL RegistroArticulo("1233124", "Royal", "Pantalon con el logo de Royal centrado", 20000, 2, "Si", "2019-08-11", 3);
  
 CALL EgresoArticulo(195, "Vendido");
 CALL EgresoArticulo(195, "En Stock");
@@ -334,3 +405,9 @@ CALL CrearFactura(2, 1, "2019-12-12", "12:00:00", 193, 1);
 CALL CrearFactura(2, 1, "2019-12-12", "12:00:00", 192, 5);
 
 CALL EmpleadoMes("2019-11-12");
+
+CALL GenerarCSVPuntos();
+
+CALL GenerarCSVProductos();
+
+CALL GenerarCSVCompras();
