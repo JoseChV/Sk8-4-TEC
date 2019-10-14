@@ -2,7 +2,10 @@ CREATE DATABASE IF NOT EXISTS Base_Sucursal;
 
 USE Base_Sucursal;
 
-SHOW DATABASES;
+CREATE TABLE Categoria(
+    IdCategoria INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(60) NOT NULL
+);
 
 CREATE TABLE Articulo(
     IdArticulo INT AUTO_INCREMENT PRIMARY KEY,
@@ -17,19 +20,29 @@ CREATE TABLE Articulo(
     FOREIGN KEY(IdCategoria) REFERENCES Categoria(IdCategoria)
 );
 
-CREATE TABLE Categoria(
-    IdCategoria INT AUTO_INCREMENT PRIMARY KEY,
-    Nombre VARCHAR(60) NOT NULL
+CREATE TABLE Producto(
+    IdProducto INT AUTO_INCREMENT PRIMARY KEY,
+    IdArticulo INT NOT NULL,
+    Estado VARCHAR(50) NOT NULL,
+    FOREIGN KEY(IdArticulo) REFERENCES Articulo(IdArticulo)
 );
 
 CREATE TABLE Promocion(
     IdPromocion INT AUTO_INCREMENT PRIMARY KEY,
     IdArticulo INT NOT NULL,
-    FechaHoraI DATE NOT NULL,
-    FechaHoraF DATE NOT NULL,
+    FechaI DATE NOT NULL,
+    FechaF DATE NOT NULL,
+    HoraI TIME NOT NULL,
+    HoraF TIME NOT NULL,
     Descuento INT NOT NULL,
-    Puntos INT NOT NULL,
+    Puntos FLOAT NOT NULL,
     FOREIGN KEY(IdArticulo) REFERENCES Articulo(IdArticulo)
+);
+
+CREATE TABLE Puesto(
+    IdPuesto INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(60) NOT NULL,
+    Salario INT NOT NULL
 );
 
 CREATE TABLE Empleado(
@@ -42,31 +55,9 @@ CREATE TABLE Empleado(
     FOREIGN KEY(IdPuesto) REFERENCES Puesto(IdPuesto)
 );
 
-CREATE TABLE Puesto(
-    IdPuesto INT AUTO_INCREMENT PRIMARY KEY,
-    Nombre VARCHAR(60) NOT NULL,
-    Salario INT NOT NULL
-);
-
-CREATE TABLE Direccion(
-    IdDireccion INT AUTO_INCREMENT PRIMARY KEY,
-    IdDistrito INT NOT NULL,
-    Direccion VARCHAR(60) NOT NULL,
-    FOREIGN KEY(IdDistrito) REFERENCES Distrito(IdDistrito)
-);
-
-CREATE TABLE Distrito(
-    IdDistrito INT AUTO_INCREMENT PRIMARY KEY,
-    IdCanton INT NOT NULL,
-    Nombre VARCHAR(60) NOT NULL,
-    FOREIGN KEY(IdCanton) REFERENCES Canton(IdCanton)
-);
-
-CREATE TABLE Canton(
-    IdCanton INT AUTO_INCREMENT PRIMARY KEY,
-    IdProvincia INT NOT NULL,
-    Nombre VARCHAR(60) NOT NULL,
-    FOREIGN KEY(IdProvincia) REFERENCES Provincia(IdProvincia)
+CREATE TABLE Pais(
+    IdPais INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(60) NOT NULL
 );
 
 CREATE TABLE Provincia(
@@ -76,9 +67,25 @@ CREATE TABLE Provincia(
     FOREIGN KEY(IdPais) REFERENCES Pais(IdPais)
 );
 
-CREATE TABLE Pais(
-    IdPais INT AUTO_INCREMENT PRIMARY KEY,
-    Nombre VARCHAR(60) NOT NULL
+CREATE TABLE Canton(
+    IdCanton INT AUTO_INCREMENT PRIMARY KEY,
+    IdProvincia INT NOT NULL,
+    Nombre VARCHAR(60) NOT NULL,
+    FOREIGN KEY(IdProvincia) REFERENCES Provincia(IdProvincia)
+);
+
+CREATE TABLE Distrito(
+    IdDistrito INT AUTO_INCREMENT PRIMARY KEY,
+    IdCanton INT NOT NULL,
+    Nombre VARCHAR(60) NOT NULL,
+    FOREIGN KEY(IdCanton) REFERENCES Canton(IdCanton)
+);
+
+CREATE TABLE Direccion(
+    IdDireccion INT AUTO_INCREMENT PRIMARY KEY,
+    IdDistrito INT NOT NULL,
+    Direccion VARCHAR(60) NOT NULL,
+    FOREIGN KEY(IdDistrito) REFERENCES Distrito(IdDistrito)
 );
 
 CREATE TABLE Entrega(
@@ -88,6 +95,7 @@ CREATE TABLE Entrega(
     HoraLlegada DATE NOT NULL
 );
 
+-- falta hablar sobre este
 CREATE TABLE EntregaArticulo(
     IdEntrega INT NOT NULL,
     IdProducto INT NOT NULL,
@@ -101,7 +109,7 @@ CREATE TABLE Cliente(
     Apellido VARCHAR(70) NOT NULL,
     Cedula VARCHAR(40) NOT NULL,
     Telefono VARCHAR(40) NOT NULL,
-    Puntos INT NOT NULL
+    Puntos FLOAT NOT NULL
 );
 
 CREATE TABLE Factura(
@@ -123,18 +131,32 @@ CREATE TABLE ArticuloFactura(
     IdFactura INT NOT NULL,
     IdProducto INT NOT NULL,
     IdMetodoPago INT NOT NULL,
+    Precio INT NOT NULL,
     FOREIGN KEY(IdFactura) REFERENCES Factura(IdFactura),
     FOREIGN KEY(IdProducto) REFERENCES Producto(IdProducto),
     FOREIGN KEY(IdMetodoPago) REFERENCES MetodoPago(IdMetodoPago)
 );
 
-CREATE TABLE Producto(
-    IdProducto INT AUTO_INCREMENT PRIMARY KEY,
-    IdArticulo INT NOT NULL,
-    Estado VARCHAR(50) NOT NULL,
-    FOREIGN KEY(IdArticulo) REFERENCES Articulo(IdArticulo)
-);
 
 INSERT INTO Categoria(Nombre)
-	VALUES 
-	("Camiseta");
+VALUES 
+("Camiseta");
+    
+INSERT INTO Puesto(Nombre, Salario)
+VALUES 
+("Administrador", 900000),
+("Gerente", 1000000),
+("Cajero", 600000),
+("Conserje", 400000);
+
+INSERT INTO MetodoPago(Nombre)
+VALUES 
+("Efectivo"),
+("Tarjeta de Debito"),
+("Tarjeta de Credito"),
+("Paypal"),
+("Puntos");
+
+SHOW VARIABLES LIKE "secure_file_priv";
+
+SHOW DATABASES;
